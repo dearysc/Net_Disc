@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string>
 #include <stringstream>
+#include <json/json.h>
 
 int create_bind_socket(const char* port)
 {
@@ -53,6 +54,30 @@ int create_bind_socket(const char* port)
 	return serverfd;
 }
 
+int make_socket_non_blocking (int sfd)  
+{  
+  int flags, s;  
+  
+  //得到文件状态标志  
+  flags = fcntl (sfd, F_GETFL, 0);  
+  if (flags == -1)  
+    {  
+      perror ("fcntl");  
+      return -1;  
+    }  
+  
+  //设置文件状态标志  
+  flags |= O_NONBLOCK;  
+  s = fcntl (sfd, F_SETFL, flags);  
+  if (s == -1)  
+    {  
+      perror ("fcntl");  
+      return -1;  
+    }  
+  
+  return 0;  
+}  
+
 void split(std::string& s, std::string& delim,std::vector< std::string >* ret)  
 {  
     size_t last = 0;  
@@ -69,9 +94,72 @@ void split(std::string& s, std::string& delim,std::vector< std::string >* ret)
     }  
 }  
 
-void Parse_JsonStr()
+/***********************************/
+/*** inet_aton和inet_ntoa非线程安全 ***/
+/***********************************/
+// int ip_str2num(const string& s)
+// {
+// 	struct in_addr tmp_addr;
+
+// 	if( inet_aton(s.c_str(),&tmp_addr))
+// 	{
+// 		int ret_ip;
+// 		ret_ip = ntohl(tmp_addr.s_addr);
+// 		return ret_ip;
+// 	}
+// 	return -1;
+// }
+
+// string ip_num2str(unsigned int ip)
+// {
+// 	struct in_addr tmp_addr;
+// 	tmp_addr.s_addr ＝ htonl(ip);
+	
+// 	string str;
+// 	str.assign(inet_ntoa(tmp_addr));
+// 	return str;
+// }
+
+unsigned int ip_str2num(const string& s)
 {
+	struct in_addr tmp_addr;
+	if( inet_pton(AF_INET, s.c_str(), (void*)&tmp_addr) != 0)
+	{
+		unsigned int ret_ip;
+		ret_ip = ntohl(tmp_addr.s_addr);
+		return ret_ip;
+	}
+	return -1;
 
 }
 
+string ip_num2str(unsigned int ip)
+{
+	struct in_addr tmp_addr;
+	tmp_addr.s_addr = htonl(ip);
+
+	char ipbuf[20];
+	inet_ntop(AF_INET, (void *)&tmp_addr, ipbuf, 20);
+
+	string str;
+	str.assign(ipbuf);
+	return str;
+}
+
+template <typename T>
+T from_str(const string& str)
+{
+	istringstream s(str);
+	T t;
+	s>>t;
+	return t;
+}
+
+template <typename T>
+string to_str(const T& t)
+{
+	ostringstream s;
+	s<<t;
+	return s.str();
+}
 #endif

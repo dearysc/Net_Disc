@@ -48,8 +48,9 @@ void CRoute_manager::readconf(const char* filepath)
 	Json::Value root;
 
 	ifstream is;
-
-	is.open(filepath, ios::binary);
+	
+	is.open(filepath,ios::binary);
+	
 	if(reader.parse(is,root))
 	{
 		int set_num = root["cell_addr"].size();
@@ -74,9 +75,7 @@ void CRoute_manager::readconf(const char* filepath)
 		access_iplist[0] = root["Access_ip"].asString();
 		access_portlist[0] = root["Access_port"].asInt();
 	}
-
 	is.close();
-	
 }
 
 vector<ipset_t>::iterator CRoute_manager::search_bounds(const string& ip, unsigned int& lower,unsigned int& upper)
@@ -306,7 +305,7 @@ string CRoute_manager::prepare_infodata()  // 和运维采用json传递数据
 void* maintain_thread(void *p)
 {
 	// pthread_detach(pthread_self());
-
+	cout<<"enter maintain thread"<<endl;
 	CRoute_manager* pCRoute = (CRoute_manager*)p;
 	struct sockaddr in_addr;  
     socklen_t in_len;  

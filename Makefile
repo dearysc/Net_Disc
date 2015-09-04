@@ -1,7 +1,7 @@
 LIB=-lpthread -ljson_linux-gcc-4.4.7_libmt
 CFLAGS= -Wall -O
 LIBPATH=-L/usr/local/lib64
-OBJS=route_main.o route_manager.o 
+OBJS=route_main.o route_manager.o common.o 
 
 route_module:$(OBJS)
 	g++ $(CFLAGS) $(LIBPATH) $(LIB) $(OBJS) -o route_module

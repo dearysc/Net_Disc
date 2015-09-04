@@ -58,7 +58,7 @@ private:
 	string access_iplist[1];   	          // Access服务器的IP
 	unsigned int access_portlist[1]			      // Access服务器的PORT
 	int set_num;					 	  // Cell服务器集合数，默认3台一个集合
-	pthread_t thread_id;			 	  // 线程id
+	
 	int flag;      					 	  // 记录扩容还是缩容,1---扩容  -1----缩容 
 	int range_mid;					 	  // 记录扩容或者缩容过程的中间范围
 
@@ -92,6 +92,8 @@ private:
 
 	int send_table2access(string& access_ip); // 把更新后的route_table发给Access
 public:
+	pthread_t mt_thread_id;			 	  // 线程id
+	pthread_t info_thread_id;
 	// 线程函数
 	friend void* maintain_thread(void* p);
 	friend void* cellinfo_thread(void* p);
@@ -104,7 +106,7 @@ public:
 // 接收运维请求
 void* maintain_thread(void *p)
 {
-	pthread_detach(pthread_self());
+	// pthread_detach(pthread_self());
 
 	CRoute_manager* pCRoute = (CRoute_manager*)p;
 	struct sockaddr in_addr;  

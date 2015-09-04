@@ -21,10 +21,10 @@ CRoute_manager::CRoute_manager()
 	if(listen(info_fd, SOMAXCONN) == -1)
 		exit(-1);
 
-	if( pthread_create(&thread_id,NULL,maintain_thread,(void*)this) != 0 )
+	if( pthread_create(&mt_thread_id,NULL,maintain_thread,(void*)this) != 0 )
 		exit(-1);
 
-	if( pthread_create(&thread_id,NULL,cellinfo_thread,(void*)this) != 0 )
+	if( pthread_create(&info_thread_id,NULL,cellinfo_thread,(void*)this) != 0 )
 		exit(-1);
 
 	// if( pthread_create(&thread_id,NULL,request_cellinfo_thread,(void*)this) != 0 )

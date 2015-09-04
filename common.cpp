@@ -3,11 +3,14 @@
 
 #include <sys/socket.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string>
+#include <string.h>
 #include <sstream>
+#include <fcntl.h>
 #include <json/json.h>
 
 using namespace std;

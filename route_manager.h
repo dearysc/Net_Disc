@@ -14,6 +14,7 @@
 #include <vector>
 #include <fstream>
 #include <sys/epoll.h>
+#include <errno.h>
 // #include <algorithm>
 #include <json/json.h>
 
@@ -56,7 +57,7 @@ public:
 	~CRoute_manager();
 private:
 	string access_iplist[1];   	          // Access服务器的IP
-	unsigned int access_portlist[1]			      // Access服务器的PORT
+	unsigned int access_portlist[1];	  // Access服务器的PORT
 	int set_num;					 	  // Cell服务器集合数，默认3台一个集合
 	
 	int flag;      					 	  // 记录扩容还是缩容,1---扩容  -1----缩容 
@@ -148,7 +149,7 @@ void* maintain_thread(void *p)
 				pCRoute->parse_moverequest(root);
 				if( pCRoute->do_datamove_request() )
 				{
-					send_table2access(access_iplist[0]);
+					pCRoute->send_table2access(pCRoute->access_iplist[0]);
 				}
 
 			}
@@ -176,14 +177,15 @@ void * cellinfo_thread(void* p)
 	struct epoll_event* events;
 	int efd;
 
-	efd = epoll_create();
-
+	efd = epoll_create(20);
+	//efd = epoll_create1();
+	
 	event.data.fd = pCRoute->info_fd;
 	event.events = EPOLLIN | EPOLLET;  //设置成边沿触发
 	if(epoll_ctl(efd,EPOLL_CTL_ADD,pCRoute->info_fd,&event) == -1)
 		exit(-1);
 
-	events = calloc(EVENTSNUM,sizeof epoll_event);
+	events = (epoll_event*)calloc(EVENTSNUM ,sizeof(epoll_event));
 
     while(1)
 	{
@@ -223,24 +225,11 @@ void * cellinfo_thread(void* p)
                         }  
                     } 
 
-                    //将地址转化为主机名或者服务名  
-	                s = getnameinfo (&in_addr, in_len,  
-				                       hbuf, sizeof hbuf,  
-				                       sbuf, sizeof sbuf,  
-				                       NI_NUMERICHOST | NI_NUMERICSERV);//flag参数:以数字名返回  
-				                      //主机地址和服务地址  
-	  
-	                if (s == 0)  
-	                {  
-	                	printf("Accepted connection on descriptor %d "  
-	                       	  "(host=%s, port=%s)\n", infd, hbuf, sbuf);  
-	                }  
-
 	                if(make_socket_non_blocking (infd) == -1)  
 	                	exit(-1);
 
 	                event.data.fd = infd;
-	                event.events = EPOLLIN | EPOLL_ET;
+	                event.events = EPOLLIN | EPOLLET;
 	                if(epoll_ctl(efd,EPOLL_CTL_ADD,infd,&event) == -1)
 	                	exit(-1);
           		}
@@ -264,7 +253,7 @@ void * cellinfo_thread(void* p)
 				if (nread == 0)
 				{
 					event.data.fd = fd;
-	                event.events = EPOLLIN | EPOLL_ET;
+	                event.events = EPOLLIN | EPOLLET;
 					epoll_ctl(efd,EPOLL_CTL_DEL,fd,&event);
 
 					close(fd);
@@ -272,7 +261,7 @@ void * cellinfo_thread(void* p)
 				}
 
 				event.data.fd = fd;
-                event.events = EPOLLOUT | EPOLL_ET;
+                event.events = EPOLLOUT | EPOLLET;
 				epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
 
           	}
@@ -289,26 +278,29 @@ void * cellinfo_thread(void* p)
 				        if (nwrite == -1 && errno != EAGAIN)
 				        {  
 				            perror("write error");  
-				            continue;
+				            break;
 				        }  
 				         
 				    }  
 				    if(nwrite == 0)  // the other side closed
 				    {
 				    	event.data.fd = fd;
-		                event.events = EPOLLOUT | EPOLL_ET;
+		                event.events = EPOLLOUT | EPOLLET;
 						epoll_ctl(efd,EPOLL_CTL_DEL,fd,&event);
 
 						close(fd);
-						continue;
+						break;
 				    }
 				    n -= nwrite;  
 				}
 				// 重新监听EPOLLIN事件
-				event.data.fd = fd;
-                event.events = EPOLLIN | EPOLL_ET;
-				epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
-				
+				if ( n == 0 ) // 
+				{
+					event.data.fd = fd;
+                	event.events = EPOLLIN | EPOLLET;
+					epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
+				}
+
           	}
 
         }

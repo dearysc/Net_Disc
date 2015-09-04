@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string>
-#include <stringstream>
+#include <sstream>
 #include <json/json.h>
 
+using namespace std;
 int create_bind_socket(const char* port)
 {
 	struct addrinfo hints;
@@ -120,10 +121,10 @@ void split(std::string& s, std::string& delim,std::vector< std::string >* ret)
 // 	return str;
 // }
 
-unsigned int ip_str2num(const string& s)
+unsigned int ip_str2num(const string str)
 {
 	struct in_addr tmp_addr;
-	if( inet_pton(AF_INET, s.c_str(), (void*)&tmp_addr) != 0)
+	if( inet_pton(AF_INET, str.c_str(), (void*)&tmp_addr) != 0)
 	{
 		unsigned int ret_ip;
 		ret_ip = ntohl(tmp_addr.s_addr);

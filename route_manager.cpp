@@ -97,7 +97,7 @@ vector<ipset_t>::iterator CRoute_manager::search_bounds(const string& ip, unsign
 
 int CRoute_manager::parse_moverequest(Json::Value root)
 {
-	memset(celladdr_buf,0,sizeof celladdr_buf);
+	memset(celladdr_buf,0,sizeof(celladdr_buf));
 
 	string tmp;
 
@@ -163,7 +163,7 @@ bool CRoute_manager::do_datamove_request()
 		close(sockfd);
 	}
 
-	memcpy(&t, buf, sizeof t);
+	memcpy(&t, buf, sizeof(t));
 	if( t == 1)
 		success_times++;
 	close(sockfd);
@@ -181,7 +181,7 @@ bool CRoute_manager::do_datamove_request()
 		close(sockfd);
 	}
 
-	memcpy(&t, buf, sizeof t);
+	memcpy(&t, buf, sizeof (t));
 	if( t == 1)
 		success_times++;
 	close(sockfd);
@@ -199,7 +199,7 @@ bool CRoute_manager::do_datamove_request()
 		close(sockfd);
 	}
 
-	memcpy(&t, buf, sizeof t);
+	memcpy(&t, buf, sizeof (t));
 	if( t == 1)
 		success_times++;
 	close(sockfd);
@@ -253,7 +253,7 @@ int CRoute_manager::send_table2access(string& access_ip)
 
 	inet_pton(AF_INET, access_ip.c_str(), &access_addr.sin_addr);
 
-	connect(sockfd, (struct sockaddr*)&access_addr, sizeof access_addr);
+	connect(sockfd, (struct sockaddr*)&access_addr, sizeof (access_addr));
 
 	ipset_t* access_buf = new ipset_t[_route_table.size()];
 
@@ -264,7 +264,7 @@ int CRoute_manager::send_table2access(string& access_ip)
 		p++;
 	}
 
-	int ret = write(sockfd,(void*)access_buf,sizeof(access_buf));
+	int ret = write(sockfd,(void*)access_buf, sizeof(access_buf));
 	if(ret == -1)
 	{
 		perror("write access error!");
@@ -306,11 +306,11 @@ void* maintain_thread(void *p)
     socklen_t in_len;  
     int infd;  
     char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];  
-    in_len = sizeof in_addr; 
+    in_len = sizeof (in_addr); 
 
 	while(1)
 	{
-        
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
         infd = accept (pCRoute->maintain_servfd, &in_addr, &in_len);  
         if(infd == -1)
         {
@@ -376,7 +376,7 @@ void * cellinfo_thread(void* p)
 	if(epoll_ctl(efd,EPOLL_CTL_ADD,pCRoute->info_fd,&event) == -1)
 		exit(-1);
 
-	events = (epoll_event*)calloc(EVENTSNUM,sizeof epoll_event);
+	events = (epoll_event*)calloc(EVENTSNUM, sizeof(epoll_event));
 
     whi le(1) 
 	{
@@ -399,7 +399,7 @@ void * cellinfo_thread(void* p)
 				    socklen_t in_len;  
 				    int infd;  
 				    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];  
-				    in_len = sizeof in_addr; 
+				    in_len = sizeof(in_addr); 
 				    infd = accept (pCRoute->info_fd, &in_addr, &in_len); 
 				    if (infd == -1)  
                     {  
@@ -415,19 +415,6 @@ void * cellinfo_thread(void* p)
                           break;  
                         }  
                     } 
-
-                    //将地址转化为主机名或者服务名  
-	                s = getnameinfo (&in_addr, in_len,  
-				                       hbuf, sizeof hbuf,  
-				                       sbuf, sizeof sbuf,  
-				                       NI_NUMERICHOST | NI_NUMERICSERV);//flag参数:以数字名返回  
-				                      //主机地址和服务地址  
-	  
-	                if (s == 0)  
-	                {  
-	                	printf("Accepted connection on descriptor %d "  
-	                       	  "(host=%s, port=%s)\n", infd, hbuf, sbuf);  
-	                }  
 
 	                if(make_socket_non_blocking (infd) == -1)  
 	                	exit(-1);

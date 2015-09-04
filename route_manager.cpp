@@ -308,7 +308,7 @@ void* maintain_thread(void *p)
 	struct sockaddr in_addr;  
     socklen_t in_len;  
     int infd;  
-    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];  
+   
     in_len = sizeof (in_addr); 
 
 	while(1)
@@ -400,7 +400,7 @@ void * cellinfo_thread(void* p)
           			struct sockaddr in_addr;  
 				    socklen_t in_len;  
 				    int infd;  
-				    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];  
+			
 				    in_len = sizeof(in_addr); 
 				    infd = accept (pCRoute->info_fd, &in_addr, &in_len); 
 				    if (infd == -1)  

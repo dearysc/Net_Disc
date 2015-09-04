@@ -14,6 +14,7 @@
 #include <vector>
 #include <fstream>
 #include <sys/epoll.h>
+#include <errno.h>
 // #include <algorithm>
 #include <json/json.h>
 
@@ -56,7 +57,7 @@ public:
 	~CRoute_manager();
 private:
 	string access_iplist[1];   	          // Access服务器的IP
-	unsigned int access_portlist[1]			      // Access服务器的PORT
+	unsigned int access_portlist[1];	  // Access服务器的PORT
 	int set_num;					 	  // Cell服务器集合数，默认3台一个集合
 	
 	int flag;      					 	  // 记录扩容还是缩容,1---扩容  -1----缩容 
@@ -100,7 +101,5 @@ public:
 	friend void* request_cellinfo_thread(void* p);
 	
 };
-
-
 
 #endif

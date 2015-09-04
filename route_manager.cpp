@@ -31,7 +31,7 @@ CRoute_manager::CRoute_manager()
 		exit(-1);
 
 	// if( pthread_create(&thread_id,NULL,request_cellinfo_thread,(void*)this) != 0 )
-	// 	exit(-1);
+	// 	exit(-1);		
 	
 
 }
@@ -54,18 +54,19 @@ void CRoute_manager::readconf(const char* filepath)
 	{
 		int set_num = root["cell_addr"].size();
 		
-		int seg = RANGE / set_num;
 		for (int i = 0 ; i < set_num ; i++)
 		{
 			ipset_t tmp;
-			tmp.lower_bounds = i * seg;
-			tmp.upper_bounds = (i+1) * seg;
+			tmp.lower_bounds = root["cell_addr"][i]["lower"].asInt();
+			tmp.upper_bounds = root["cell_addr"][i]["upper"].asInt();
 			tmp.ip1 = ip_str2num( root["cell_addr"][i]["IP1"].asString() );
 			tmp.ip2 = ip_str2num( root["cell_addr"][i]["IP2"].asString() );
 			tmp.ip3 = ip_str2num( root["cell_addr"][i]["IP3"].asString() );
 			
-			if( i == set_num-1)
-				tmp.upper_bounds = RANGE;
+			if (tmp.lower_bounds > tmp.upper_bounds)
+			{
+				tmp.lower_bounds = tmp.upper_bounds;
+			}
 
 			_route_table.push_back(tmp);
 		}
@@ -126,7 +127,7 @@ int CRoute_manager::parse_moverequest(Json::Value root)
 		range_mid = (lower + upper) / 2;
 	}
 	else if( (flag = root["flag"].asInt() ) == -1)  //表示缩容
-	{
+	{	
 		unsigned int lower,upper;
 		from_set = search_bounds(tmp,lower,upper);
 		to_set = search_bounds(root["new_ip"]["IP1"].asString(),lower,upper);
@@ -287,6 +288,8 @@ string CRoute_manager::prepare_infodata()  // 和运维采用json传递数据
 		set["IP1"] = Json::Value( ip_num2str((*it).ip1) );
 		set["IP2"] = Json::Value( ip_num2str((*it).ip2) );
 		set["IP3"] = Json::Value( ip_num2str((*it).ip3) );
+		set["lower"] = Json::Value( (*it).lower_bounds );
+		set["uppper"] = Json::Value( (*it).upper_bounds );
 
 		root["cell_addr"].append(set);
 		

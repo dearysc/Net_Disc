@@ -2,6 +2,9 @@
 
 #include "route_manager.h"
 
+void* maintain_thread(void*);
+void* cellinfo_thread(void*);
+
 CRoute_manager::CRoute_manager()
 {
 	readconf("./conf.json");
@@ -258,7 +261,7 @@ int CRoute_manager::send_table2access(string& access_ip)
 	ipset_t* access_buf = new ipset_t[_route_table.size()];
 
 	ipset_t* p = access_buf;
-	for(int i = 0; i < _route_table.size(); i++)
+	for(unsigned int i = 0; i < _route_table.size(); i++)
 	{
 		p[i] = _route_table[i];
 		p++;
@@ -369,16 +372,16 @@ void * cellinfo_thread(void* p)
 	struct epoll_event* events;
 	int efd;
 
-	efd = epoll_create();
+	efd = epoll_create(20);
 
 	event.data.fd = pCRoute->info_fd;
 	event.events = EPOLLIN | EPOLLET;  //设置成边沿触发
 	if(epoll_ctl(efd,EPOLL_CTL_ADD,pCRoute->info_fd,&event) == -1)
 		exit(-1);
 
-	events = (epoll_event*)calloc(EVENTSNUM,sizeof epoll_event);
+	events = (epoll_event*)calloc(EVENTSNUM,sizeof(epoll_event));
 
-    whi le(1) 
+    while(1) 
 	{
         int n = epoll_wait(efd,events,EVENTSNUM,-1);
         for(int i = 0; i < n; i++)
@@ -416,24 +419,11 @@ void * cellinfo_thread(void* p)
                         }  
                     } 
 
-                    //将地址转化为主机名或者服务名  
-	                s = getnameinfo (&in_addr, in_len,  
-				                       hbuf, sizeof hbuf,  
-				                       sbuf, sizeof sbuf,  
-				                       NI_NUMERICHOST | NI_NUMERICSERV);//flag参数:以数字名返回  
-				                      //主机地址和服务地址  
-	  
-	                if (s == 0)  
-	                {  
-	                	printf("Accepted connection on descriptor %d "  
-	                       	  "(host=%s, port=%s)\n", infd, hbuf, sbuf);  
-	                }  
-
 	                if(make_socket_non_blocking (infd) == -1)  
 	                	exit(-1);
 
 	                event.data.fd = infd;
-	                event.events = EPOLLIN | EPOLL_ET;
+	                event.events = EPOLLIN | EPOLLET;
 	                if(epoll_ctl(efd,EPOLL_CTL_ADD,infd,&event) == -1)
 	                	exit(-1);
           		}
@@ -457,7 +447,7 @@ void * cellinfo_thread(void* p)
 				if (nread == 0)
 				{
 					event.data.fd = fd;
-	                event.events = EPOLLIN | EPOLL_ET;
+	                event.events = EPOLLIN | EPOLLET;
 					epoll_ctl(efd,EPOLL_CTL_DEL,fd,&event);
 
 					close(fd);
@@ -465,7 +455,7 @@ void * cellinfo_thread(void* p)
 				}
 
 				event.data.fd = fd;
-                event.events = EPOLLOUT | EPOLL_ET;
+                event.events = EPOLLOUT | EPOLLET;
 				epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
 
           	}
@@ -489,7 +479,7 @@ void * cellinfo_thread(void* p)
 				    if(nwrite == 0)  // the other side closed
 				    {
 				    	event.data.fd = fd;
-		                event.events = EPOLLOUT | EPOLL_ET;
+		                event.events = EPOLLOUT | EPOLLET;
 						epoll_ctl(efd,EPOLL_CTL_DEL,fd,&event);
 
 						close(fd);
@@ -498,10 +488,10 @@ void * cellinfo_thread(void* p)
 				    n -= nwrite;  
 				}
 				// 重新监听EPOLLIN事件
-				if(n == 0)
+				if(n == 0)  //
 				{
 					event.data.fd = fd;
-                	event.events = EPOLLIN | EPOLL_ET;
+                	event.events = EPOLLIN | EPOLLET;
 					epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
 				}
           	}

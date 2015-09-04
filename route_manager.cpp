@@ -295,6 +295,71 @@ string CRoute_manager::prepare_infodata()  // 和运维采用json传递数据
 	return jsonstr;
 }
 
+
+// 接收运维请求
+void* maintain_thread(void *p)
+{
+	// pthread_detach(pthread_self());
+
+	CRoute_manager* pCRoute = (CRoute_manager*)p;
+	struct sockaddr in_addr;  
+    socklen_t in_len;  
+    int infd;  
+    char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];  
+    in_len = sizeof in_addr; 
+
+	while(1)
+	{
+        
+        infd = accept (pCRoute->maintain_servfd, &in_addr, &in_len);  
+        if(infd == -1)
+        {
+        	perror("accept error!\n");
+        	continue;
+        }
+
+        int cnt = read(infd, pCRoute->mt_recvbuf, BUFLEN);
+        
+        if(cnt < 0)
+        {
+        	perror("read error!");
+        	exit(-1);
+        }
+        else if(cnt == 0)  // thd other side closed
+        {
+        	close(infd);
+        	continue;
+        }
+
+        Json::Reader reader;
+		Json::Value root;
+
+		if(reader.parse(pCRoute->mt_recvbuf,root))
+		{
+			if(root["Act"].asString() == string("Update"))
+			{
+				pCRoute->parse_moverequest(root);
+				if( pCRoute->do_datamove_request() )
+				{
+					pCRoute->send_table2access(pCRoute->access_iplist[0]);
+				}
+
+			}
+
+			if(root["Act"].asString() == string("Request"))
+			{
+				string str = pCRoute->prepare_infodata();
+				strcpy(pCRoute->stat_sendbuf,str.c_str());
+				write(infd, pCRoute->stat_sendbuf, strlen(str.c_str()));
+			}
+		}
+
+
+        
+	}
+}
+
+
 // 可能作为服务器接收Cell请求
 void * cellinfo_thread(void* p)
 {
@@ -417,7 +482,7 @@ void * cellinfo_thread(void* p)
 				        if (nwrite == -1 && errno != EAGAIN)
 				        {  
 				            perror("write error");  
-				            continue;
+				            break;
 				        }  
 				         
 				    }  
@@ -428,15 +493,17 @@ void * cellinfo_thread(void* p)
 						epoll_ctl(efd,EPOLL_CTL_DEL,fd,&event);
 
 						close(fd);
-						continue;
+						break;
 				    }
 				    n -= nwrite;  
 				}
 				// 重新监听EPOLLIN事件
-				event.data.fd = fd;
-                event.events = EPOLLIN | EPOLL_ET;
-				epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
-				
+				if(n == 0)
+				{
+					event.data.fd = fd;
+                	event.events = EPOLLIN | EPOLL_ET;
+					epoll_ctl(efd,EPOLL_CTL_MOD,fd,&event);
+				}
           	}
 
         }
